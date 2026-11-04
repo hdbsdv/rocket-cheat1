@@ -13,10 +13,13 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      # ЭТОТ ШАГ УСТАНАВЛИВАЕТ ANDROID SDK
+      # Исправленный шаг установки Android SDK (обход ошибки с пакетом tools)
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
+        with:
+          packages: 'platform-tools'
 
+      # Автоматическая настройка Gradle Wrapper
       - name: Setup Gradle Wrapper
         run: |
           if [ ! -f "gradlew" ]; then
@@ -39,6 +42,7 @@ jobs:
           fi
           chmod +x gradlew
 
+      # Скачивание исходников Lua 5.4
       - name: Download Lua
         run: |
           curl -LO https://www.lua.org/ftp/lua-5.4.6.tar.gz
@@ -47,9 +51,11 @@ jobs:
           cp lua-5.4.6/src/*.c lua-5.4.6/src/*.h app/src/main/cpp/lua54/
           rm app/src/main/cpp/lua54/lua.c app/src/main/cpp/lua54/luac.c
 
+      # Компиляция APK
       - name: Build
         run: ./gradlew assembleDebug
 
+      # Сохранение готового файла
       - uses: actions/upload-artifact@v4
         with:
           name: rocket-apk
