@@ -1,55 +1,39 @@
-name: Build APK
-on:
-  workflow_dispatch:
+plugins {
+    id 'com.android.application'
+}
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+android {
+    namespace 'com.rocket.cheat'
+    compileSdk 34
 
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
+    defaultConfig {
+        applicationId "com.rocket.cheat"
+        minSdk 26
+        targetSdk 34
+        versionCode 1
+        versionName "1.0"
 
-      - name: Setup Gradle Wrapper
-        run: |
-          # Если gradlew нет, создаем его
-          if [ ! -f "gradlew" ]; then
-            echo '#!/bin/sh' > gradlew
-            echo 'APP_HOME=$(cd "${0%/*}" && pwd -P)' >> gradlew
-            echo 'CLASSPATH=$APP_HOME/gradle/wrapper/gradle-wrapper.jar' >> gradlew
-            echo 'exec java -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"' >> gradlew
-            chmod +x gradlew
-          fi
-          # Если папки и файла настроек Gradle нет, создаем их
-          mkdir -p gradle/wrapper
-          if [ ! -f "gradle/wrapper/gradle-wrapper.properties" ]; then
-            echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
-            echo "distributionPath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-            echo "distributionUrl=https\\://services.gradle.org/distributions/gradle-8.2-bin.zip" >> gradle/wrapper/gradle-wrapper.properties
-            echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
-            echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
-          fi
-          # Скачиваем сам wrapper.jar, так как без него Gradle не запустится
-          if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
-            curl -sL -o gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.2.0/gradle/wrapper/gradle-wrapper.jar
-          fi
-          chmod +x gradlew
+        // Поддержка 64 и 32 бит
+        ndk {
+            abiFilters "arm64-v8a", "armeabi-v7a"
+        }
+        
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++17 -O2"
+            }
+        }
+    }
 
-      - name: Download Lua
-        run: |
-          curl -LO https://www.lua.org/ftp/lua-5.4.6.tar.gz
-          tar xzf lua-5.4.6.tar.gz
-          mkdir -p app/src/main/cpp/lua54
-          cp lua-5.4.6/src/*.c lua-5.4.6/src/*.h app/src/main/cpp/lua54/
-          rm app/src/main/cpp/lua54/lua.c app/src/main/cpp/lua54/luac.c
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
 
-      - name: Build
-        run: ./gradlew assembleDebug
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: rocket-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+        }
+    }
+}
