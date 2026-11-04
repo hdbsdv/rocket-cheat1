@@ -1,0 +1,22 @@
+name: Build APK
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: 'temurin', java-version: '17' }
+      - name: Download Lua
+        run: |
+          curl -LO https://www.lua.org/ftp/lua-5.4.6.tar.gz
+          tar xzf lua-5.4.6.tar.gz
+          mkdir -p app/src/main/cpp/lua54
+          cp lua-5.4.6/src/*.c lua-5.4.6/src/*.h app/src/main/cpp/lua54/
+          rm app/src/main/cpp/lua54/lua.c app/src/main/cpp/lua54/luac.c
+      - name: Build
+        run: ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rocket-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
