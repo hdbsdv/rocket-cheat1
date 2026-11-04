@@ -13,9 +13,12 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      # ЭТОТ ШАГ УСТАНАВЛИВАЕТ ANDROID SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Setup Gradle Wrapper
         run: |
-          # Если gradlew нет, создаем его
           if [ ! -f "gradlew" ]; then
             echo '#!/bin/sh' > gradlew
             echo 'APP_HOME=$(cd "${0%/*}" && pwd -P)' >> gradlew
@@ -23,7 +26,6 @@ jobs:
             echo 'exec java -classpath "$CLASSPATH" org.gradle.wrapper.GradleWrapperMain "$@"' >> gradlew
             chmod +x gradlew
           fi
-          # Если папки и файла настроек Gradle нет, создаем их
           mkdir -p gradle/wrapper
           if [ ! -f "gradle/wrapper/gradle-wrapper.properties" ]; then
             echo "distributionBase=GRADLE_USER_HOME" > gradle/wrapper/gradle-wrapper.properties
@@ -32,7 +34,6 @@ jobs:
             echo "zipStoreBase=GRADLE_USER_HOME" >> gradle/wrapper/gradle-wrapper.properties
             echo "zipStorePath=wrapper/dists" >> gradle/wrapper/gradle-wrapper.properties
           fi
-          # Скачиваем сам wrapper.jar, так как без него Gradle не запустится
           if [ ! -f "gradle/wrapper/gradle-wrapper.jar" ]; then
             curl -sL -o gradle/wrapper/gradle-wrapper.jar https://github.com/gradle/gradle/raw/v8.2.0/gradle/wrapper/gradle-wrapper.jar
           fi
